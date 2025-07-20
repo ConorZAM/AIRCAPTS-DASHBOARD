@@ -33,7 +33,7 @@
     </style>
 </head>
 <body>
-    <h1>✨ Live Device Tracker</h1>
+    <h1>AIRCAPTS Device Dashboard</h1>
     <table id="deviceTable">
         <thead>
             <tr>
@@ -52,7 +52,7 @@
         const devices = {};
         const tbody = document.querySelector("#deviceTable tbody");
 
-        const socket = new WebSocket("ws://localhost:585858/subscribe");
+        const socket = new WebSocket("wss://urgently-stunning-ape.ngrok-free.app/subscribe");
 
         socket.addEventListener("message", (event) => {
             const data = JSON.parse(event.data);
@@ -80,7 +80,7 @@
                         <td class="${recent}">${device.id}</td>
                         <td>${device.latitude.toFixed(7)}</td>
                         <td>${device.longitude.toFixed(7)}</td>
-                        <td class="${altitudeClass}">${device.altitude}</td>
+                        <td>${device.altitude}</td>
                         <td class="${batteryClass}">${device.battery.toFixed(2)}%</td>
                         <td>${new Date(device.receivedTime).toLocaleTimeString()}</td>
                     `;

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Dashboard</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .low-battery {
+            background-color: #fdd;
+        }
+        .stale-update {
+            background-color: #def;
+        }
+        .recent-update {
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>✨ Live Device Tracker</h1>
+    <table id="deviceTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Altitude</th>
+                <th>Battery</th>
+                <th>Received</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const devices = {};
+        const tbody = document.querySelector("#deviceTable tbody");
+
+        const socket = new WebSocket("ws://localhost:585858/subscribe");
+
+        socket.addEventListener("message", (event) => {
+            const data = JSON.parse(event.data);
+            const now = new Date();
+            data.receivedTime = new Date(data.receivedTime);
+            devices[data.id] = data;
+            updateTable();
+        });
+
+        function updateTable() {
+            tbody.innerHTML = "";
+            const rows = Object.values(devices)
+                .sort((a, b) => b.receivedTime - a.receivedTime)
+                .slice(0, 10)
+                .map(device => {
+                    const tr = document.createElement("tr");
+
+                    // Conditional styling
+                    const batteryClass = device.battery < 3.5 ? "low-battery" : "";
+
+                  // Give 5 minutes before we flag as stale
+                    const recent = (new Date() - new Date(device.receivedTime)) < 300000 ? "recent-update" : "stale-update";
+
+                    tr.innerHTML = `
+                        <td class="${recent}">${device.id}</td>
+                        <td>${device.latitude.toFixed(7)}</td>
+                        <td>${device.longitude.toFixed(7)}</td>
+                        <td class="${altitudeClass}">${device.altitude}</td>
+                        <td class="${batteryClass}">${device.battery.toFixed(2)}%</td>
+                        <td>${new Date(device.receivedTime).toLocaleTimeString()}</td>
+                    `;
+                    return tr;
+                });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    </script>
+</body>
+</html>

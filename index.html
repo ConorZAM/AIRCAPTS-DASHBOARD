@@ -68,33 +68,8 @@
             updateTable();
         });
 
-        function updateTable() {
-            tbody.innerHTML = "";
-            const rows = Object.values(devices)
-                .sort((a, b) => b.receivedTime - a.receivedTime)
-                .slice(0, 10)
-                .map(device => {
-                    const tr = document.createElement("tr");
-
-                    // Conditional styling
-                    const batteryClass = device.battery < 3.5 ? "low-battery" : "";
-
-                    // Give 5 minutes before we flag as stale
-                    const recent = (new Date() - new Date(device.receivedTime)) < 300000 ? "recent-update" : "stale-update";
-
-                    tr.innerHTML = `
-                            <td class="${recent}">${device.id}</td>
-                            <td>${device.latitude.toFixed(7)}</td>
-                            <td>${device.longitude.toFixed(7)}</td>
-                            <td>${device.altitude}</td>
-                            <td class="${batteryClass}">${device.battery.toFixed(2)}%</td>
-                            <td>${new Date(device.receivedTime).toLocaleTimeString()}</td>
-                        `;
-                    return tr;
-                });
-
-            rows.forEach(row => tbody.appendChild(row));
-        }
+        // Continually update the table so we can see when devices go stale
+        setInterval(updateTable, 1000);
 
         function updateTable() {
             const now = Date.now();

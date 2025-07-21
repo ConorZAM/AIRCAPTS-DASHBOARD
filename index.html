@@ -8,24 +8,30 @@
             font-family: sans-serif;
             padding: 20px;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
+
         th, td {
             padding: 8px 12px;
             border: 1px solid #ccc;
             text-align: center;
         }
+
         th {
             background-color: #f4f4f4;
         }
+
         .low-battery {
             background-color: #fdd;
         }
+
         .stale-update {
             background-color: #def;
         }
+
         .recent-update {
             font-weight: bold;
             color: green;
@@ -49,7 +55,7 @@
     </table>
 
     <script>
-        const devices = {};
+    const devices = {};
         const tbody = document.querySelector("#deviceTable tbody");
 
         const socket = new WebSocket("wss://urgently-stunning-ape.ngrok-free.app/subscribe");
@@ -73,21 +79,84 @@
                     // Conditional styling
                     const batteryClass = device.battery < 3.5 ? "low-battery" : "";
 
-                  // Give 5 minutes before we flag as stale
+                    // Give 5 minutes before we flag as stale
                     const recent = (new Date() - new Date(device.receivedTime)) < 300000 ? "recent-update" : "stale-update";
 
                     tr.innerHTML = `
-                        <td class="${recent}">${device.id}</td>
-                        <td>${device.latitude.toFixed(7)}</td>
-                        <td>${device.longitude.toFixed(7)}</td>
-                        <td>${device.altitude}</td>
-                        <td class="${batteryClass}">${device.battery.toFixed(2)}%</td>
-                        <td>${new Date(device.receivedTime).toLocaleTimeString()}</td>
-                    `;
+                            <td class="${recent}">${device.id}</td>
+                            <td>${device.latitude.toFixed(7)}</td>
+                            <td>${device.longitude.toFixed(7)}</td>
+                            <td>${device.altitude}</td>
+                            <td class="${batteryClass}">${device.battery.toFixed(2)}%</td>
+                            <td>${new Date(device.receivedTime).toLocaleTimeString()}</td>
+                        `;
                     return tr;
                 });
 
             rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function updateTable() {
+            const now = Date.now();
+            const topDevices = Object.values(devices)
+                .sort(function (a, b) {
+                    if (a.id < b.id) {
+                        return -1;
+                    }
+                    if (a.name > b.name) {
+                        return 1;
+                    }
+                    return 0;
+                })
+                .slice(0, 10);
+
+            const existingRows = Array.from(tbody.children);
+            const currentIds = topDevices.map(d => d.id);
+
+            // Remove rows for devices no longer in top 10
+            existingRows.forEach(row => {
+                const id = row.dataset.id;
+                if (!currentIds.includes(id)) {
+                    row.remove();
+                }
+            });
+
+            topDevices.forEach(device => {
+                const rowId = device.id;
+                const existingRow = tbody.querySelector(`tr[data-id="${rowId}"]`);
+
+                // Conditional styling
+                const batteryClass = device.battery < 3.5 ? "low-battery" : "";
+
+                // Give 5 minutes before we flag as stale
+                const recent = (new Date() - new Date(device.receivedTime)) < 300000 ? "recent-update" : "stale-update";
+
+                const cells = [
+                    `<td class="${recent}">${device.id}</td>`,
+                    `<td>${device.latitude.toFixed(7)}</td>`,
+                    `<td>${device.longitude.toFixed(7)}</td>`,
+                    `<td>${device.altitude}</td>`,
+                    `<td class="${batteryClass}">${device.battery.toFixed(2)}%</td>`,
+                    `<td>${new Date(device.receivedTime).toLocaleTimeString()}</td>`
+                ];
+
+                if (existingRow) {
+                    // Update existing row if needed
+                    const existingCells = existingRow.children;
+                    for (let i = 0; i < cells.length; i++) {
+                        const newHTML = cells[i];
+                        if (existingCells[i].outerHTML !== newHTML) {
+                            existingCells[i].outerHTML = newHTML;
+                        }
+                    }
+                } else {
+                    // Add new row
+                    const tr = document.createElement("tr");
+                    tr.dataset.id = rowId;
+                    tr.innerHTML = cells.join("");
+                    tbody.appendChild(tr);
+                }
+            });
         }
     </script>
 </body>

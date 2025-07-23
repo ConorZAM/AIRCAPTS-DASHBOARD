@@ -60,13 +60,22 @@
 
         const socket = new WebSocket("ws://urgently-stunning-ape.ngrok-free.app/subscribe");
 
+
+        // Connection opened
+        //socket.addEventListener("open", (event) => {
+        //    socket.send("Hello Server!");
+        //});
+
         socket.addEventListener("message", (event) => {
             const data = JSON.parse(event.data);
-            const now = new Date();
-            data.receivedTime = new Date(data.receivedTime);
-            devices[data.id] = data;
+            console.log(data);
+            
+            devices[data.Id] = data;
+            
             updateTable();
         });
+
+        socket.onclose = (event) => console.log("Closed:", event.code, event.reason);
 
         // Continually update the table so we can see when devices go stale
         setInterval(updateTable, 1000);
@@ -75,44 +84,43 @@
             const now = Date.now();
             const topDevices = Object.values(devices)
                 .sort(function (a, b) {
-                    if (a.id < b.id) {
+                    if (a.Id < b.Id) {
                         return -1;
                     }
-                    if (a.name > b.name) {
+                    if (a.Id > b.Id) {
                         return 1;
                     }
                     return 0;
-                })
-                .slice(0, 10);
+                });
 
             const existingRows = Array.from(tbody.children);
             const currentIds = topDevices.map(d => d.id);
 
             // Remove rows for devices no longer in top 10
-            existingRows.forEach(row => {
-                const id = row.dataset.id;
-                if (!currentIds.includes(id)) {
-                    row.remove();
-                }
-            });
+            //existingRows.forEach(row => {
+            //    const id = row.dataset.id;
+            //    if (!currentIds.includes(id)) {
+            //        row.remove();
+            //    }
+            //});
 
             topDevices.forEach(device => {
-                const rowId = device.id;
+                const rowId = device.Id;
                 const existingRow = tbody.querySelector(`tr[data-id="${rowId}"]`);
 
                 // Conditional styling
-                const batteryClass = device.battery < 3.5 ? "low-battery" : "";
+                const batteryClass = device.Battery < 3.5 ? "low-battery" : "";
 
                 // Give 5 minutes before we flag as stale
-                const recent = (new Date() - new Date(device.receivedTime)) < 300000 ? "recent-update" : "stale-update";
+                const recent = (new Date() - new Date(device.ReceivedTime)) < 300000 ? "recent-update" : "stale-update";
 
                 const cells = [
-                    `<td class="${recent}">${device.id}</td>`,
-                    `<td>${device.latitude.toFixed(7)}</td>`,
-                    `<td>${device.longitude.toFixed(7)}</td>`,
-                    `<td>${device.altitude}</td>`,
-                    `<td class="${batteryClass}">${device.battery.toFixed(2)}%</td>`,
-                    `<td>${new Date(device.receivedTime).toLocaleTimeString()}</td>`
+                    `<td class="${recent}">${device.Id}</td>`,
+                    `<td>${device.Latitude}</td>`,
+                    `<td>${device.Longitude}</td>`,
+                    `<td>${device.Altitude}</td>`,
+                    `<td class="${batteryClass}">${device.Battery} V</td>`,
+                    `<td>${new Date(device.ReceivedTime).toLocaleTimeString()}</td>`
                 ];
 
                 if (existingRow) {
